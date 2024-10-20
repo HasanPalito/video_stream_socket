@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sky Ranger UI with Joystick Input</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0d1117;
+            color: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+            background-color: #161b22;
+        }
+
+        .video-display {
+            flex: 3;
+            background-color: #21262d;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #imageDisplay {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+
+        .status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: red;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            user-select: none;
+        }
+
+        .info-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #21262d;
+            border-radius: 10px;
+            padding: 15px;
+            gap: 20px;
+            justify-content: space-between;
+        }
+
+        .info-header {
+            text-align: center;
+            user-select: none;
+        }
+
+        .info-header h1 {
+            font-size: 48px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin: 0;
+            line-height: 1;
+            text-align: center;
+            color: #3b82f6;
+            text-shadow: 0px 0px 8px #3b82f6;
+        }
+
+        .clock {
+            font-size: 24px;
+            font-weight: 600;
+            color: #bbb;
+            margin-top: 10px;
+            text-align: center;
+            user-select: none;
+        }
+
+        .content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .info-table {
+            width: 100%;
+            background-color: #2d333b;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            user-select: none;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .video-placeholder {
+            width: 100%;
+            height: 200px;
+            background-color: #2d333b;
+            border: 2px dashed #3b82f6;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 15px;
+            user-select: none;
+        }
+
+        .joystick-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 250px;
+            background: none;
+            margin-top: auto;
+        }
+
+        .joystick {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #444;
+            position: relative;
+        }
+
+        .joystick-handle {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            transition: transform 0.1s ease;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="video-display">
+            <div class="status" id="status">OFF</div>
+            <img id="imageDisplay" src="#" alt="Received Image">
+        </div>
+
+        <div class="info-panel">
+            <div class="info-header">
+                <h1>Sky Ranger</h1>
+                <div class="clock" id="clock">00:00:00</div>
+            </div>
+
+            <div class="content">
+                <div class="info-table">
+                    <div class="info-row">
+                        <span><i class="fas fa-drone"></i> Speed</span> <!-- Ikon drone -->
+                        <span>10 km/h</span>
+                    </div>
+                    <div class="info-row">
+                        <span>⬆️ Height</span>
+                        <span>10 meter</span>
+                    </div>
+                    <div class="info-row">
+                        <span>🕒 Flight Time</span>
+                        <span>10 Minute</span>
+                    </div>
+                </div>
+
+                <div class="video-placeholder">
+                    <p>Video Placeholder</p>
+                </div>
+
+                <div class="joystick-container">
+                    <div class="joystick" id="joystick">
+                        <div class="joystick-handle" id="joystickHandle"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        const joystick = document.getElementById('joystick');
+        const joystickHandle = document.getElementById('joystickHandle');
+        let isDragging = false;
+
+        joystickHandle.addEventListener('mousedown', () => {
+            isDragging = true;
+        });
+
+        // Function to send joystick data to FastAPI
+        async function sendJoystickData(speed, degree) {
+            try {
+                fetch('http://192.168.114.137:9000/', {
+                    method: 'POST',
+                    body: new URLSearchParams({
+                    'speed': speed.toString(),
+                    'degree': degree.toString()
+                })
+            });
+            }catch (error) {
+                console.error('Error posting joystick data:', error);
+            }
+        }
+
+        document.addEventListener('mousemove', (event) => {
+            if (!isDragging) return;
+
+            const rect = joystick.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const offsetX = event.clientX - centerX;
+            const offsetY = event.clientY - centerY;
+
+            const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+            const maxDistance = rect.width / 2 - joystickHandle.offsetWidth / 2;
+
+            if (distance < maxDistance) {
+                joystickHandle.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            } else {
+                const angle = Math.atan2(offsetY, offsetX);
+                const limitedX = Math.cos(angle) * maxDistance;
+                const limitedY = Math.sin(angle) * maxDistance;
+                joystickHandle.style.transform = `translate(${limitedX}px, ${limitedY}px)`;
+            }
+
+            console.log(`X: ${offsetX}, Y: ${offsetY}`);// Log data arah joystick
+            // Convert offsetX and offsetY into "speed" and "degree"
+            speed = - Math.max(Math.min(offsetY / maxDistance, 1), -1);  // Speed relative to Y-axis
+            degree = Math.max(Math.min(offsetX / maxDistance, 1), -1);
+            degree = Math.round(degree * 45); // Scale degree and round to integer
+            speed = Math.round(speed * 30);
+            console.log(`Speed: ${speed}, Degree: ${degree}`); // Log speed and degree
+            
+            // Send joystick data to the server
+            sendJoystickData(speed, degree);
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            joystickHandle.style.transform = 'translate(0, 0)';
+        });
+
+        const socket = new WebSocket('ws://localhost:9998');
+        const imageElement = document.getElementById('imageDisplay');
+        const statusElement = document.getElementById('status');
+
+        socket.onopen = function(event) {
+            console.log('Connected to the WebSocket server.');
+        };
+
+        socket.onmessage = function(event) {
+            const imgBlob = new Blob([event.data], { type: 'image/jpeg' });
+            const imgUrl = URL.createObjectURL(imgBlob);
+            imageElement.src = imgUrl;
+            statusElement.textContent = 'ON';
+            statusElement.style.backgroundColor = 'green';
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket Error:', error);
+        };
+
+        socket.onclose = function(event) {
+            console.log('Disconnected from the WebSocket server.');
+        };
+    </script>
+</body>
+</html>

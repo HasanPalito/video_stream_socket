@@ -3,15 +3,21 @@ from fastapi.responses import HTMLResponse
 from pathlib import Path
 import uvicorn
 from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI, HTTPException
+from typing import Annotated
+from fastapi import FastAPI, HTTPException, Form
 print()
 app = FastAPI()
+
+global_speed=0
+global_degree = 0
+global_current_speed = 0
+global_current_degree = 0
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/", response_class=HTMLResponse)
 async def get_html():
     # Open and read the HTML file
-    html_file_path = Path("client.html")
+    html_file_path = Path("client_v1.html")
     html_content = html_file_path.read_text(encoding="utf-8")
     return HTMLResponse(content=html_content)
 
@@ -33,5 +39,22 @@ async def get_dynamic_file(file: str):
             return Response(content=file_path.read_bytes())
     
     raise HTTPException(status_code=404, detail="File not found")
+
+@app.post("/")
+async def get_speed_degree(speed:  Annotated[str, Form()],degree:  Annotated[str, Form()]):
+    global global_speed
+    global global_degree
+    global_speed = speed
+    global_degree= degree
+    return {"status":"success"}
+
+@app.get("/v1/control/")
+async def control():      
+    global global_speed
+    global global_degree
+    global global_current_speed
+    global global_current_degree
+    return {"status":"success", "speed": global_speed,"degree":global_degree}
+
     
 uvicorn.run(app,port=9000,host="0.0.0.0")

@@ -1,51 +1,52 @@
 import asyncio
-import cv2
 import websockets
-import numpy as np
 
-# Global list to store all connected WebSocket clients
-connected_clients = set()
+# Global sets to store WebSocket connections
+sender_client = None
+viewer_clients = set()
 
-async def broadcast_frames():
-    cap = cv2.VideoCapture(0)
+async def handle_sender(websocket, path):
+    """Handle incoming image data from the sender."""
+    global sender_client
+    sender_client = websocket
+    print("Sender connected.")
     
     try:
         while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
+            # Receive binary image data from the sender
+            image_data = await websocket.recv()
 
-            # Encode the frame as a JPEG
-            buffer = cv2.imencode('.jpg', frame)[1].tobytes()
+            # Broadcast the image to all connected viewers
+            if viewer_clients:
+                tasks = [client.send(image_data) for client in viewer_clients]
+                await asyncio.gather(*tasks)
 
-            # Create a list of tasks to send frames to all connected clients
-            if connected_clients:  # Only try to send if there are connected clients
-                tasks = [client.send(buffer) for client in connected_clients]
-                await asyncio.gather(*tasks)  # Use gather to wait for all send tasks
-
-            # Small delay to control frame rate
-            await asyncio.sleep(0.05)
-
+    except websockets.exceptions.ConnectionClosed:
+        print("Sender disconnected.")
+    
     finally:
-        cap.release()
+        sender_client = None
 
-async def handle_client(websocket, path):
-    # Register the new client
-    connected_clients.add(websocket)
-    print(f"Client connected: {len(connected_clients)} clients total.")
-
+async def handle_viewer(websocket, path):
+    """Handle image viewers (clients)."""
+    viewer_clients.add(websocket)
+    print(f"Viewer connected: {len(viewer_clients)} clients total.")
+    
     try:
-        # Keep connection open for this client
-        await websocket.wait_closed()
+        await websocket.wait_closed()  # Keep connection open for this client
+    
     finally:
-        # Unregister the client when they disconnect
-        connected_clients.remove(websocket)
-        print(f"Client disconnected: {len(connected_clients)} clients remaining.")
+        viewer_clients.remove(websocket)
+        print(f"Viewer disconnected: {len(viewer_clients)} clients remaining.")
 
-start_server = websockets.serve(handle_client, "0.0.0.0", 9999)
+async def main():
+    # Create a WebSocket server handling both sender and viewer clients
+    server = websockets.serve(handle_sender, "0.0.0.0", 9999)  # For the sender
+    viewer_server = websockets.serve(handle_viewer, "0.0.0.0", 9998)  # For viewers
 
-# Start the WebSocket server and the frame broadcasting loop
-loop = asyncio.get_event_loop()
-loop.run_until_complete(start_server)
-loop.create_task(broadcast_frames())
-loop.run_forever()
+    # Wait until both servers are up
+    await asyncio.gather(server, viewer_server)
+
+# Start the WebSocket server
+asyncio.get_event_loop().run_until_complete(main())
+asyncio.get_event_loop().run_forever()
