@@ -25,5 +25,5 @@ async def send_frames(uri):
             cap.release()
 
 if __name__ == "__main__":
-    uri = "ws://localhost:8080"  # Update this with your server's address
+    uri = "ws://localhost:9999"  # Update this with your server's address
     asyncio.run(send_frames(uri))

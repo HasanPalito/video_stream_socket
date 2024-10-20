@@ -42,7 +42,7 @@ async def handle_client(websocket, path):
         connected_clients.remove(websocket)
         print(f"Client disconnected: {len(connected_clients)} clients remaining.")
 
-start_server = websockets.serve(handle_client, "0.0.0.0", 8080)
+start_server = websockets.serve(handle_client, "0.0.0.0", 9999)
 
 # Start the WebSocket server and the frame broadcasting loop
 loop = asyncio.get_event_loop()

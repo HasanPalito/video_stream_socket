@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Object with MPU6050 and Axes</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
+  <style>
+    body { margin: 0; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    // Initialize Three.js scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'),antialias: true ,alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+    // Add AxesHelper to visualize the axes
+    const axesHelper = new THREE.AxesHelper(5);  // Size 5 for each axis
+    scene.add(axesHelper);
+
+    // Reposition the camera to see all axes more clearly
+    camera.position.set(90, 0, 0);  // Move camera along X, Y, and Z axis to get an angled view
+    camera.lookAt(scene.position); // Make the camera look at the origin (0, 0, 0)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Soft white light
+    scene.add(ambientLight);
+
+  // Add directional light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // Bright white light
+    directionalLight.position.set(5, 5, 5).normalize();
+    scene.add(directionalLight);
+
+    // Load the custom 3D model (.obj format) using OBJLoader
+    const objLoader = new THREE.OBJLoader();
+    let customObject;
+
+    // Optional: Load material file (.mtl) if available
+    const mtlLoader = new THREE.MTLLoader();
+    mtlLoader.load('11804_Airplane_v2_l2.mtl', function(materials) {
+      materials.preload();  // Preload the materials
+      objLoader.setMaterials(materials);  // Apply the materials to OBJLoader
+
+      // Now load the .obj model and add it to the scene
+      objLoader.load('11804_Airplane_v2_l2.obj', function(object) {
+        customObject = object;
+        object.rotation.x = -Math.PI / 2;
+        object.scale.set(0.05, 0.05, 0.05); 
+        object.position.set(0, 0, 0);
+        scene.add(customObject);
+      }, undefined, function(error) {
+        console.error('An error occurred while loading the model:', error);
+      });
+    });
+
+    // If there is no material file (.mtl), you can load the .obj directly like this:
+    // objLoader.load('path_to_your_model/model.obj', function(object) {
+    //   customObject = object;
+    //   scene.add(customObject);
+    // });
+
+    // WebSocket connection to receive MPU6050 sensor data
+    const socket = new WebSocket('ws://your_server_address');  // Replace with your WebSocket server address
+
+
+    // Function to animate the scene
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
