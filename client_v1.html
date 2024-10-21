@@ -232,7 +232,7 @@
         // Function to send joystick data to FastAPI
         async function sendJoystickData(speed, degree) {
             try {
-                fetch('http://192.168.114.137:9000/', {
+                fetch('http://172.188.64.30:9000/', {
                     method: 'POST',
                     body: new URLSearchParams({
                     'speed': speed.toString(),
@@ -283,7 +283,7 @@
             joystickHandle.style.transform = 'translate(0, 0)';
         });
 
-        const socket = new WebSocket('ws://192.168.114.137:9998');
+        const socket = new WebSocket('ws://172.188.64.30:9998');
         const imageElement = document.getElementById('imageDisplay');
         const statusElement = document.getElementById('status');
 
