@@ -268,8 +268,8 @@
 
             console.log(`X: ${offsetX}, Y: ${offsetY}`);// Log data arah joystick
             // Convert offsetX and offsetY into "speed" and "degree"
-            speed = - Math.max(Math.min(offsetY / maxDistance, 1), -1);  // Speed relative to Y-axis
-            degree = Math.max(Math.min(offsetX / maxDistance, 1), -1);
+            speed = Math.min(Math.abs(offsetY / maxDistance), 1);  // Speed relative to Y-axis
+            degree = Math.min(Math.abs(offsetX / maxDistance), 1);
             degree = Math.round(degree * 45); // Scale degree and round to integer
             speed = Math.round(speed * 30);
             console.log(`Speed: ${speed}, Degree: ${degree}`); // Log speed and degree
@@ -283,7 +283,7 @@
             joystickHandle.style.transform = 'translate(0, 0)';
         });
 
-        const socket = new WebSocket('ws://localhost:9998');
+        const socket = new WebSocket('ws://192.168.114.137:9998');
         const imageElement = document.getElementById('imageDisplay');
         const statusElement = document.getElementById('status');
 
