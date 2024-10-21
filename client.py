@@ -41,7 +41,7 @@ async def handle_viewer(websocket, path):
 
 async def main():
     # Create a WebSocket server handling both sender and viewer clients
-    server = websockets.serve(handle_sender, "0.0.0.0", 9999)  # For the sender
+    server = websockets.serve(handle_sender, "0.0.0.0", 9997)  # For the sender
     viewer_server = websockets.serve(handle_viewer, "0.0.0.0", 9998)  # For viewers
 
     # Wait until both servers are up
