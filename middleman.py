@@ -40,21 +40,6 @@ async def get_dynamic_file(file: str):
     
     raise HTTPException(status_code=404, detail="File not found")
 
-@app.post("/")
-async def get_speed_degree(speed:  Annotated[str, Form()],degree:  Annotated[str, Form()]):
-    global global_speed
-    global global_degree
-    global_speed = speed
-    global_degree= degree
-    return {"status":"success"}
-
-@app.get("/v1/control/")
-async def control():      
-    global global_speed
-    global global_degree
-    global global_current_speed
-    global global_current_degree
-    return {"status":"success", "speed": global_speed,"degree":global_degree}
 
     
 uvicorn.run(app,port=9000,host="0.0.0.0")

@@ -11,17 +11,26 @@ async def send_images():
                 ret, frame = cap.read()
                 if not ret:
                     break
-
-                # Encode frame as JPEG
                 buffer = cv2.imencode('.jpg', frame)[1].tobytes()
-
-                # Send binary image data to the middleman
                 await websocket.send(buffer)
-
-                # Small delay to control frame rate
                 await asyncio.sleep(0.05)
-
         finally:
             cap.release()
+
+import paho.mqtt.client as mqtt
+
+def on_message(client, userdata, msg):
+    print(f"Received message: {msg.payload.decode()} on topic {msg.topic}")
+    #control logic here
+
+client = mqtt.Client()
+
+client.on_message = on_message
+
+client.connect("localhost", 1883, 60)
+
+topic = "joystick/data"
+client.subscribe(topic)
+client.loop_forever()
 
 asyncio.get_event_loop().run_until_complete(send_images())

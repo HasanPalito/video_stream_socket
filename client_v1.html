@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sky Ranger UI with Joystick Input</title>
-
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 
     <style>
@@ -228,21 +228,39 @@
         joystickHandle.addEventListener('mousedown', () => {
             isDragging = true;
         });
+        const client = mqtt.connect('ws://3.129.58.174:8083/mqtt');
+        client.on('connect', () => {
+            console.log('Connected to MQTT broker');
+        });
 
-        // Function to send joystick data to FastAPI
-        async function sendJoystickData(speed, degree) {
-            try {
-                fetch('http://172.188.64.30:9000/', {
-                    method: 'POST',
-                    body: new URLSearchParams({
-                    'speed': speed.toString(),
-                    'degree': degree.toString()
-                })
+        client.on('error', (error) => {
+            console.error('MQTT Connection error:', error);
+        });
+
+        function sendJoystickData(speed, degree) {
+            const payload = JSON.stringify({ speed, degree }); // Prepare the payload
+            client.publish('joystick/data', payload, (error) => {
+                if (error) {
+                    console.error('Error publishing joystick data:', error);
+                } else {
+                    console.log('Joystick data published:', payload);
+                }
             });
-            }catch (error) {
-                console.error('Error posting joystick data:', error);
-            }
         }
+        // Function to send joystick data to FastAPI
+        // async function sendJoystickData(speed, degree) {
+        //     try {
+        //         fetch('http://172.188.64.30:9000/', {
+        //             method: 'POST',
+        //             body: new URLSearchParams({
+        //             'speed': speed.toString(),
+        //             'degree': degree.toString()
+        //         })
+        //     });
+        //     }catch (error) {
+        //         console.error('Error posting joystick data:', error);
+        //     }
+        // }
 
         document.addEventListener('mousemove', (event) => {
             if (!isDragging) return;
@@ -283,7 +301,7 @@
             joystickHandle.style.transform = 'translate(0, 0)';
         });
 
-        const socket = new WebSocket('ws://172.188.64.30:9998');
+        const socket = new WebSocket('ws://3.129.58.174:9998');
         const imageElement = document.getElementById('imageDisplay');
         const statusElement = document.getElementById('status');
 
