@@ -197,7 +197,7 @@
                 </div>
 
                 <div class="video-placeholder">
-                    <p>Video Placeholder</p>
+                    <iframe src="3d_image.html" style="width: 300%; height: 300%; border: none;"></iframe>
                 </div>
 
                 <div class="joystick-container">
@@ -237,8 +237,8 @@
             console.error('MQTT Connection error:', error);
         });
 
-        function sendJoystickData(speed, degree) {
-            const payload = JSON.stringify({ speed, degree }); // Prepare the payload
+        function sendJoystickData(horizontal, vertical) {
+            const payload = JSON.stringify({horizontal, vertical}); // Prepare the payload
             client.publish('joystick/data', payload, (error) => {
                 if (error) {
                     console.error('Error publishing joystick data:', error);
@@ -263,38 +263,53 @@
         // }
 
         document.addEventListener('mousemove', (event) => {
-            if (!isDragging) return;
+    if (!isDragging) return;
 
-            const rect = joystick.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
+    const rect = joystick.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
 
-            const offsetX = event.clientX - centerX;
-            const offsetY = event.clientY - centerY;
+    const offsetX = event.clientX - centerX;
+    const offsetY = event.clientY - centerY;
 
-            const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
-            const maxDistance = rect.width / 2 - joystickHandle.offsetWidth / 2;
+    const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+    const maxDistance = rect.width / 2 - joystickHandle.offsetWidth / 2;
 
-            if (distance < maxDistance) {
-                joystickHandle.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-            } else {
-                const angle = Math.atan2(offsetY, offsetX);
-                const limitedX = Math.cos(angle) * maxDistance;
-                const limitedY = Math.sin(angle) * maxDistance;
-                joystickHandle.style.transform = `translate(${limitedX}px, ${limitedY}px)`;
-            }
+    let limitedX = offsetX;
+    let limitedY = offsetY;
 
-            console.log(`X: ${offsetX}, Y: ${offsetY}`);// Log data arah joystick
-            // Convert offsetX and offsetY into "speed" and "degree"
-            speed = Math.min(Math.abs(offsetY / maxDistance), 1);  // Speed relative to Y-axis
-            degree = Math.min(Math.abs(offsetX / maxDistance), 1);
-            degree = Math.round(degree * 45); // Scale degree and round to integer
-            speed = Math.round(speed * 30);
-            console.log(`Speed: ${speed}, Degree: ${degree}`); // Log speed and degree
-            
-            // Send joystick data to the server
-            sendJoystickData(speed, degree);
-        });
+    if (distance > maxDistance) {
+        const angle = Math.atan2(offsetY, offsetX);
+        limitedX = Math.cos(angle) * maxDistance;
+        limitedY = Math.sin(angle) * maxDistance;
+    }
+
+    joystickHandle.style.transform = `translate(${limitedX}px, ${limitedY}px)`;
+
+    // Map the joystick position to the range 0-180 for X and Y
+    const xValue =Math.round(limitedX / maxDistance) // Maps -1 to 1 -> 90 to 180
+    const yValue =-Math.round(limitedY / maxDistance);      // Maps -1 to 1 -> 0 to 180
+    if ( xValue === 0 && yValue === 0) {
+        sendJoystickData(90, 90);
+    }
+    else if (xValue === 1 && yValue === 0) {
+        sendJoystickData(90, 180);
+    }
+    else if ( xValue === -1 && yValue === 0) {
+        sendJoystickData(180, 90);
+    }
+    else if ( xValue === 0 && yValue === 1) {
+        sendJoystickData(180, 180);
+    }
+    else if ( xValue === 0 && yValue === -1) {
+        sendJoystickData(0, 0);
+    }
+
+    console.log(`vertical: ${xValue}, horizontal: ${yValue}`); // Log joystick values
+
+    // Send joystick data to the server
+    
+});
 
         document.addEventListener('mouseup', () => {
             isDragging = false;

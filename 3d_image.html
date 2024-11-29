@@ -7,6 +7,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
   <style>
     body { margin: 0; }
     canvas { display: block; }
@@ -65,8 +66,7 @@
     //   scene.add(customObject);
     // });
 
-    // WebSocket connection to receive MPU6050 sensor data
-    const socket = new WebSocket('ws://your_server_address');  // Replace with your WebSocket server address
+    // WebSocket connection to receive MPU6050 sensor data // Replace with your WebSocket server address
 
 
     // Function to animate the scene
@@ -75,6 +75,37 @@
       renderer.render(scene, camera);
     }
     animate();
+
+    const mqttClient = mqtt.connect('ws://localhost:8083/mqtt'); // Replace with your MQTT broker address
+
+    // Subscribe to the topic where roll, pitch, and yaw data is published
+    const topic = 'mpu6050/data'; // Replace with your MQTT topic
+    mqttClient.on('connect', () => {
+      console.log('Connected to MQTT broker');
+      mqttClient.subscribe(topic, (err) => {
+        if (err) {
+          console.error('Subscription error:', err);
+        } else {
+          console.log(`Subscribed to topic: ${topic}`);
+        }
+      });
+    });
+
+    mqttClient.on('message', (topic, message) => {
+      try {
+        const data = JSON.parse(message.toString()); // Parse the incoming message as JSON
+        const { roll, pitch, yaw } = data;
+
+        if (customObject) {
+          // Update the object's rotation based on roll, pitch, and yaw
+          customObject.rotation.x = THREE.MathUtils.degToRad(pitch)+-Math.PI / 2; // Convert degrees to radians
+          customObject.rotation.y = THREE.MathUtils.degToRad(yaw);
+          customObject.rotation.z = THREE.MathUtils.degToRad(roll);
+        }
+      } catch (error) {
+        console.error('Error processing MQTT message:', error);
+      }
+    });
   </script>
 </body>
 </html>
