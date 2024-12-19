@@ -93,6 +93,7 @@
 
     mqttClient.on('message', (topic, message) => {
       try {
+        console.log(message.toString());
         const data = JSON.parse(message.toString()); // Parse the incoming message as JSON
         const { roll, pitch, yaw } = data;
 
